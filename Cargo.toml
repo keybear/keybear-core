@@ -1,0 +1,8 @@
+[package]
+name = "keybear-core"
+version = "0.1.0"
+authors = ["Thomas Versteeg <thomas@versteeg.email>"]
+edition = "2018"
+
+[dependencies]
+quick-error = "2.0.0"

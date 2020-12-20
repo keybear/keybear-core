@@ -1,14 +1,11 @@
-#[cfg(feature = "actix")]
-mod actix;
-pub mod json;
-
 use anyhow::{anyhow, bail, Result};
 use chacha20poly1305::{
     aead::{Aead, NewAead},
     ChaCha20Poly1305, Key, Nonce,
 };
 use log::{debug, info};
-use rand_core::{CryptoRng, OsRng, RngCore};
+use rand_core::OsRng;
+use serde::{de::DeserializeOwned, Serialize};
 use std::{
     fs::{self, File},
     io::Read,
@@ -123,19 +120,28 @@ impl StaticSecretExt for StaticSecret {
     }
 }
 
-/// Encrypt a string into a chacha20poly1305 encoded string.
-pub fn encrypt(shared_secret_key: &SharedSecret, message: &str) -> Result<Vec<u8>> {
+/// Encrypt a serializable object into a chacha20poly1305 encoded JSON string.
+pub fn encrypt<T>(shared_secret_key: &SharedSecret, obj: &T) -> Result<Vec<u8>>
+where
+    T: Serialize,
+{
     // TODO exchange nonce messages
     let nonce = Nonce::from_slice(b"unique nonce");
 
+    // Serialize the object into a JSON byte array
+    let json = serde_json::to_vec(obj)?;
+
     cipher(shared_secret_key)
         // Encrypt the message
-        .encrypt(nonce, message.as_bytes())
+        .encrypt(nonce, json.as_slice())
         .map_err(|err| anyhow!("Encrypting message: {}", err))
 }
 
-/// Decrypt a chacha20poly1305 encoded string.
-pub fn decrypt(shared_secret_key: &SharedSecret, cipher_bytes: &[u8]) -> Result<String> {
+/// Decrypt a chacha20poly1305 encoded JSON string into an object.
+pub fn decrypt<T>(shared_secret_key: &SharedSecret, cipher_bytes: &[u8]) -> Result<T>
+where
+    T: DeserializeOwned,
+{
     // TODO exchange nonce messages
     let nonce = Nonce::from_slice(b"unique nonce");
 
@@ -143,10 +149,10 @@ pub fn decrypt(shared_secret_key: &SharedSecret, cipher_bytes: &[u8]) -> Result<
         // Decrypt the message
         .decrypt(nonce, cipher_bytes)
         .map_err(|err| anyhow!("Decrypting message: {}", err))
-        // Try to parse it as an UTF-8 string
+        // Try to convert it to a JSON object
         .map(|bytes| {
-            String::from_utf8(bytes)
-                .map_err(|err| anyhow!("Decrypting message string is not valid UTF8: {}", err))
+            serde_json::from_slice(&bytes)
+                .map_err(|err| anyhow!("Decrypted JSON is invalid: {}", err))
         })?
 }
 
@@ -161,8 +167,16 @@ fn cipher(shared_secret_key: &SharedSecret) -> ChaCha20Poly1305 {
 mod tests {
     use crate::crypto::{self, StaticSecretExt};
     use anyhow::Result;
-    use rand_core::{CryptoRng, OsRng, RngCore};
+    use rand_core::OsRng;
+    use serde::{Deserialize, Serialize};
     use x25519_dalek::{EphemeralSecret, PublicKey, StaticSecret};
+
+    #[derive(Serialize, Deserialize, Eq, PartialEq, Debug)]
+    struct TestObject {
+        string: String,
+        int: i64,
+        vec: Vec<String>,
+    }
 
     #[test]
     fn default() -> Result<()> {
@@ -219,15 +233,19 @@ mod tests {
         let bob_public = PublicKey::from(&bob_secret);
         let shared_secret = alice_secret.diffie_hellman(&bob_public);
 
-        let plaintext = "Oh hi Mark!";
+        let obj = TestObject {
+            string: "HI".to_string(),
+            int: 1234,
+            vec: vec!["Hi!".to_string(), "there".to_string()],
+        };
 
-        // Encrypt a string
-        let cipher_bytes = crypto::encrypt(&shared_secret, plaintext)?;
+        // Encrypt the object
+        let cipher_bytes = crypto::encrypt(&shared_secret, &obj)?;
 
-        // Decrypt the string
-        let decrypted = crypto::decrypt(&shared_secret, &cipher_bytes)?;
+        // Decrypt the encrypted string
+        let decrypted: TestObject = crypto::decrypt(&shared_secret, &cipher_bytes)?;
 
-        assert_eq!(plaintext, decrypted);
+        assert_eq!(obj, decrypted);
 
         Ok(())
     }

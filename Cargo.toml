@@ -13,7 +13,7 @@ include = ["src/**/*", "LICENSE", "README.md"]
 anyhow = "1.0.36"
 chacha20poly1305 = "0.7.1"
 log = "0.4.11"
-rand_core = { version = "0.5.0", default-features = false }
+rand_core = { version = "0.6.0", default-features = false }
 serde = { version = "1.0.118", features = ["derive"] }
 serde_json = "1.0.60"
 x25519-dalek = { version = "1.1.0", features = ["serde"] }

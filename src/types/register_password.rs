@@ -47,11 +47,11 @@ impl RegisterPasswordRequest {
 
     /// Associated e-mail.
     pub fn email(&self) -> Option<&str> {
-        self.email.as_ref().map(|s| s.as_str())
+        self.email.as_deref()
     }
 
     /// Associated website.
     pub fn website(&self) -> Option<&str> {
-        self.website.as_ref().map(|s| s.as_str())
+        self.website.as_deref()
     }
 }

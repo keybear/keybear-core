@@ -48,22 +48,22 @@ impl PasswordRequest {
 
     /// Unique identifier.
     pub fn id(&self) -> Option<&str> {
-        self.id.as_ref().map(|s| s.as_str())
+        self.id.as_deref()
     }
 
     /// Name of the password as configured by the user.
     pub fn name(&self) -> Option<&str> {
-        self.name.as_ref().map(|s| s.as_str())
+        self.name.as_deref()
     }
 
     /// Associated e-mail.
     pub fn email(&self) -> Option<&str> {
-        self.email.as_ref().map(|s| s.as_str())
+        self.email.as_deref()
     }
 
     /// Associated website.
     pub fn website(&self) -> Option<&str> {
-        self.website.as_ref().map(|s| s.as_str())
+        self.website.as_deref()
     }
 }
 

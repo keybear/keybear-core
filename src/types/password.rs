@@ -79,9 +79,12 @@ impl PasswordResponse {
     ///
     /// Used by the server applications.
     #[doc(hidden)]
-    pub fn new(password: &str) -> Self {
+    pub fn new<S>(password: S) -> Self
+    where
+        S: Into<String>,
+    {
         Self {
-            password: password.to_string(),
+            password: password.into(),
         }
     }
 

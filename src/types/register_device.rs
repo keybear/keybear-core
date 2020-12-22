@@ -14,11 +14,24 @@ pub struct RegisterDeviceRequest {
 
 impl RegisterDeviceRequest {
     /// Construct a new device.
-    pub fn new(name: &str, public_key: &PublicKey) -> Self {
+    pub fn new<S>(name: S, public_key: &PublicKey) -> Self
+    where
+        S: Into<String>,
+    {
         Self {
-            name: name.to_string(),
+            name: name.into(),
             public_key: base64::encode(public_key.as_bytes()),
         }
+    }
+
+    /// Name of the device as configured by the user.
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    /// The public key of the device encoded as base64.
+    pub fn public_key(&self) -> &str {
+        &self.public_key
     }
 }
 
@@ -34,6 +47,32 @@ pub struct RegisterDeviceResponse {
 }
 
 impl RegisterDeviceResponse {
+    /// Create a new response.
+    ///
+    /// Used by the server applications.
+    #[doc(hidden)]
+    pub fn new<S1, S2>(id: S1, name: S2, server_public_key: &PublicKey) -> Self
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+    {
+        Self {
+            id: id.into(),
+            name: name.into(),
+            server_public_key: base64::encode(server_public_key.as_bytes()),
+        }
+    }
+
+    /// Unique identifier.
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+
+    /// Name of the device as configured by the user.
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
     /// Get the public key of the server.
     pub fn server_public_key(&self) -> Result<PublicKey> {
         // Read exactly the bytes from the public key
@@ -43,15 +82,5 @@ impl RegisterDeviceResponse {
             .map_err(|_| anyhow!("Device public key is invalid"))?;
 
         Ok(PublicKey::from(bytes))
-    }
-
-    /// Get the registered unique identifier.
-    pub fn id(&self) -> &str {
-        &self.id
-    }
-
-    /// Get the name.
-    pub fn name(&self) -> &str {
-        &self.name
     }
 }

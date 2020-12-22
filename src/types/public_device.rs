@@ -4,7 +4,34 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PublicDevice {
     /// Unique identifier.
-    pub id: String,
+    id: String,
     /// Name of the device.
-    pub name: String,
+    name: String,
+}
+
+impl PublicDevice {
+    /// Create a new response.
+    ///
+    /// Used by the server applications.
+    #[doc(hidden)]
+    pub fn new<S1, S2>(id: S1, name: S2) -> Self
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+    {
+        Self {
+            id: id.into(),
+            name: name.into(),
+        }
+    }
+
+    /// Unique identifier.
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+
+    /// Name of the device.
+    pub fn name(&self) -> &str {
+        &self.name
+    }
 }

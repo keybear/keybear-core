@@ -7,9 +7,9 @@ pub struct PasswordRequest {
     pub id: Option<String>,
     /// Name of the password as configured by the user.
     pub name: Option<String>,
-    /// The e-mail associated.
+    /// Associated e-mail.
     pub email: Option<String>,
-    /// The website associated.
+    /// Associated website.
     pub website: Option<String>,
 }
 
@@ -45,6 +45,26 @@ impl PasswordRequest {
             ..Default::default()
         }
     }
+
+    /// Unique identifier.
+    pub fn id(&self) -> Option<&str> {
+        self.id.as_ref().map(|s| s.as_str())
+    }
+
+    /// Name of the password as configured by the user.
+    pub fn name(&self) -> Option<&str> {
+        self.name.as_ref().map(|s| s.as_str())
+    }
+
+    /// Associated e-mail.
+    pub fn email(&self) -> Option<&str> {
+        self.email.as_ref().map(|s| s.as_str())
+    }
+
+    /// Associated website.
+    pub fn website(&self) -> Option<&str> {
+        self.website.as_ref().map(|s| s.as_str())
+    }
 }
 
 /// A password response.
@@ -55,7 +75,17 @@ pub struct PasswordResponse {
 }
 
 impl PasswordResponse {
-    /// Get the password.
+    /// Create a new response.
+    ///
+    /// Used by the server applications.
+    #[doc(hidden)]
+    pub fn new(password: &str) -> Self {
+        Self {
+            password: password.to_string(),
+        }
+    }
+
+    /// Password.
     pub fn password(&self) -> &str {
         &self.password
     }

@@ -3,10 +3,11 @@ use chacha20poly1305::{
     aead::{Aead, NewAead},
     ChaCha20Poly1305, Key, Nonce,
 };
-use log::{debug, info};
+use log::{debug, trace};
 use rand_core::OsRng;
 use serde::{de::DeserializeOwned, Serialize};
 use std::{
+    any,
     fs::{self, File},
     io::Read,
     path::Path,
@@ -67,7 +68,7 @@ impl StaticSecretExt for StaticSecret {
 
     fn new_with_os_rand() -> StaticSecret {
         // Get the generic as the actual reference so it's traits can be used
-        info!("Generating new secret key");
+        debug!("Generating new secret key");
 
         // Generate a secret key
         StaticSecret::new(OsRng)
@@ -80,7 +81,7 @@ impl StaticSecretExt for StaticSecret {
         // Get the generic as the actual reference so it's traits can be used
         let file = file.as_ref();
 
-        info!("Loading secret key from file \"{}\"", file.display());
+        debug!("Loading secret key from file \"{}\"", file.display());
 
         // Cannot load from disk if the file is not a valid one
         if !Self::verify_file(file) {
@@ -112,7 +113,7 @@ impl StaticSecretExt for StaticSecret {
         // Get the generic as the actual reference so it's traits can be used
         let file = file.as_ref();
 
-        info!("Saving secret key to file \"{}\"", file.display());
+        debug!("Saving secret key to file \"{}\"", file.display());
 
         // Try to write the keys as raw bytes to the disk
         fs::write(file, self.to_bytes())
@@ -125,6 +126,8 @@ pub fn encrypt<T>(shared_secret_key: &SharedSecret, obj: &T) -> Result<Vec<u8>>
 where
     T: Serialize,
 {
+    trace!("Encrypting \"{}\" into bytes", any::type_name::<T>());
+
     // TODO exchange nonce messages
     let nonce = Nonce::from_slice(b"unique nonce");
 
@@ -142,6 +145,8 @@ pub fn decrypt<T>(shared_secret_key: &SharedSecret, cipher_bytes: &[u8]) -> Resu
 where
     T: DeserializeOwned,
 {
+    trace!("Trying to decrypt bytes into \"{}\"", any::type_name::<T>());
+
     // TODO exchange nonce messages
     let nonce = Nonce::from_slice(b"unique nonce");
 
@@ -151,8 +156,15 @@ where
         .map_err(|err| anyhow!("Decrypting message: {}", err))
         // Try to convert it to a JSON object
         .map(|bytes| {
-            serde_json::from_slice(&bytes)
-                .map_err(|err| anyhow!("Decrypted JSON is invalid: {}", err))
+            serde_json::from_slice(&bytes).map_err(|err| {
+                trace!(
+                    "JSON resulting in error \"{}\":\n{}",
+                    err,
+                    String::from_utf8_lossy(&bytes)
+                );
+
+                anyhow!("Decrypted JSON is invalid: {}", err)
+            })
         })?
 }
 

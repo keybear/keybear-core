@@ -10,13 +10,13 @@ description = "Core methods & primitives for a Keybear client/server"
 include = ["src/**/*", "LICENSE", "README.md"]
 
 [dependencies]
-anyhow = "1.0.36"
+anyhow = "1.0.37"
 base64 = "0.13.0"
 chacha20poly1305 = "0.7.1"
 log = "0.4.11"
 rand_core = { version = "0.5.0", default-features = false }
 serde = { version = "1.0.118", features = ["derive"] }
-serde_json = "1.0.60"
+serde_json = "1.0.61"
 x25519-dalek = { version = "1.1.0", features = ["serde"] }
 
 [dev-dependencies]

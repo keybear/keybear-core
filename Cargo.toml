@@ -6,8 +6,15 @@ license = "AGPL-3.0-or-later"
 edition = "2018"
 readme = "README.md"
 repository = "https://github.com/keybear/keybear"
+documentation = "https://docs.rs/keybear-core"
 description = "Core methods & primitives for a Keybear client/server"
+categories = ["encoding"]
+keywords = ["keybear"]
 include = ["src/**/*", "LICENSE", "README.md"]
+
+[badges]
+is-it-maintained-issue-resolution = { repository = "keybear/keybear-core" }
+is-it-maintained-open-issues = { repository = "keybear/keybear-core" }
 
 [dependencies]
 anyhow = "1.0.37"

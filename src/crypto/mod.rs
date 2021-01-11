@@ -1,7 +1,11 @@
+// Export the encryption primitives here so no extra libraries need to be included
+pub use chacha20poly1305::Nonce;
+pub use x25519_dalek::{PublicKey, SharedSecret, StaticSecret};
+
 use anyhow::{anyhow, bail, Result};
 use chacha20poly1305::{
     aead::{Aead, NewAead},
-    ChaCha20Poly1305, Key, Nonce,
+    ChaCha20Poly1305, Key,
 };
 use log::{debug, trace};
 use rand_core::OsRng;
@@ -12,7 +16,6 @@ use std::{
     io::Read,
     path::Path,
 };
-use x25519_dalek::{SharedSecret, StaticSecret};
 
 /// Add functions to the crypto secret key to make it easier to use.
 pub trait StaticSecretExt {
@@ -122,14 +125,11 @@ impl StaticSecretExt for StaticSecret {
 }
 
 /// Encrypt a serializable object into a chacha20poly1305 encoded JSON string.
-pub fn encrypt<T>(shared_secret_key: &SharedSecret, obj: &T) -> Result<Vec<u8>>
+pub fn encrypt<T>(shared_secret_key: &SharedSecret, nonce: &Nonce, obj: &T) -> Result<Vec<u8>>
 where
     T: Serialize,
 {
     trace!("Encrypting \"{}\" into bytes", any::type_name::<T>());
-
-    // TODO exchange nonce messages
-    let nonce = Nonce::from_slice(b"unique nonce");
 
     // Serialize the object into a JSON byte array
     let json = serde_json::to_vec(obj)?;
@@ -141,14 +141,11 @@ where
 }
 
 /// Decrypt a chacha20poly1305 encoded JSON string into an object.
-pub fn decrypt<T>(shared_secret_key: &SharedSecret, cipher_bytes: &[u8]) -> Result<T>
+pub fn decrypt<T>(shared_secret_key: &SharedSecret, nonce: &Nonce, cipher_bytes: &[u8]) -> Result<T>
 where
     T: DeserializeOwned,
 {
     trace!("Trying to decrypt bytes into \"{}\"", any::type_name::<T>());
-
-    // TODO exchange nonce messages
-    let nonce = Nonce::from_slice(b"unique nonce");
 
     cipher(shared_secret_key)
         // Decrypt the message
@@ -179,6 +176,7 @@ fn cipher(shared_secret_key: &SharedSecret) -> ChaCha20Poly1305 {
 mod tests {
     use crate::crypto::{self, StaticSecretExt};
     use anyhow::Result;
+    use chacha20poly1305::Nonce;
     use rand_core::OsRng;
     use serde::{Deserialize, Serialize};
     use x25519_dalek::{EphemeralSecret, PublicKey, StaticSecret};
@@ -251,11 +249,14 @@ mod tests {
             vec: vec!["Hi!".to_string(), "there".to_string()],
         };
 
+        // Create a random nonce
+        let nonce = Nonce::from_slice(b"abcdefghijkl");
+
         // Encrypt the object
-        let cipher_bytes = crypto::encrypt(&shared_secret, &obj)?;
+        let cipher_bytes = crypto::encrypt(&shared_secret, &nonce, &obj)?;
 
         // Decrypt the encrypted string
-        let decrypted: TestObject = crypto::decrypt(&shared_secret, &cipher_bytes)?;
+        let decrypted: TestObject = crypto::decrypt(&shared_secret, &nonce, &cipher_bytes)?;
 
         assert_eq!(obj, decrypted);
 

@@ -1,7 +1,7 @@
 /// Define the routes by API version.
 pub mod v1 {
     /// Nonce required for sending an encrypted request, unencrypted.
-    pub const NONCE: &str = "v1/nonce";
+    pub const NONCE: &str = "/v1/nonce";
     /// Registration of new devices, unencrypted.
     pub const REGISTER: &str = "/v1/register";
     /// Verification of newly registered devices.
